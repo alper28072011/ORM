@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Hotel } from '../types';
+import { Hotel, PlatformName, HotelType, Channel } from '../types';
 import { dataService } from '../services/dataService';
 
 // State yapısının tanımı
@@ -14,8 +14,9 @@ interface GlobalState {
 
 // Provider'dan dışarıya sunacağımız fonksiyonlarla birleşmiş Context yapısı
 interface GlobalContextProps extends GlobalState {
-  setSelectedHotelId: (id: string | null) => void; // null ise hepsini seçmiş kabul edebiliriz
-  refreshData: () => Promise<void>;                // Elle tetiklenebilecek refresh işlemi
+  setSelectedHotelId: (id: string | null) => void; 
+  refreshData: () => Promise<void>;
+  addHotelChannel: (hotelName: string, type: HotelType, platform: PlatformName, url: string) => Promise<void>;
 }
 
 const GlobalContext = createContext<GlobalContextProps | undefined>(undefined);
@@ -33,9 +34,8 @@ export const GlobalStateProvider: React.FC<{ children: ReactNode }> = ({ childre
       const data = await dataService.fetchAllHotels();
       setHotels(data);
       
-      // İlk veri yüklendiğinde, eğer bir otel seçili değilse 'Owned' olanlardan ilkini varsayılan seç
-      if (!selectedHotelId) {
-        const firstOwned = data.find(h => h.type === 'Owned');
+      if (!selectedHotelId && data.length > 0) {
+        const firstOwned = data.find(h => h.type === 'Owned') || data[0];
         if (firstOwned) {
           setSelectedHotelId(firstOwned.id);
         }
@@ -43,6 +43,57 @@ export const GlobalStateProvider: React.FC<{ children: ReactNode }> = ({ childre
     } catch (err) {
       setError('Otel verileri çekilirken bir hata oluştu.');
       console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const addHotelChannel = async (hotelName: string, type: HotelType, platform: PlatformName, url: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      // 1. Backend'den kazınmış güncel veriyi iste
+      const channelData = await dataService.fetchReviewsFromBackend(platform, url);
+      
+      // Standart bir ID üret
+      const generatedId = 'hotel-' + hotelName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+      
+      setHotels(prev => {
+        const newHotels = [...prev];
+        const existingHotelIndex = newHotels.findIndex(h => h.id === generatedId);
+        
+        if (existingHotelIndex >= 0) {
+          // 2a. Otel zaten varsa, belirili platform datasını ekle veya ez
+          newHotels[existingHotelIndex] = {
+            ...newHotels[existingHotelIndex],
+            type: type, // Tipi güncel tut
+            channels: {
+              ...newHotels[existingHotelIndex].channels,
+              [platform]: channelData
+            }
+          };
+        } else {
+          // 2b. Otel yoksa yeni oteli oluştur ve kanalı içine aktar
+          newHotels.push({
+            id: generatedId,
+            name: hotelName,
+            type: type,
+            channels: { [platform]: channelData } as Record<PlatformName, Channel>
+          });
+        }
+        
+        // 3. LocalStorage veritabanına kaydet
+        dataService.saveHotels(newHotels);
+        
+        if (!selectedHotelId) {
+           setSelectedHotelId(generatedId);
+        }
+        
+        return newHotels;
+      });
+    } catch (err: any) {
+      setError(err.message || `${platform} kanalına bağlanırken bir sorun yaşandı.`);
+      throw err;
     } finally {
       setIsLoading(false);
     }
@@ -66,7 +117,8 @@ export const GlobalStateProvider: React.FC<{ children: ReactNode }> = ({ childre
     isLoading,
     error,
     setSelectedHotelId,
-    refreshData: loadData
+    refreshData: loadData,
+    addHotelChannel
   };
 
   return (

@@ -4,10 +4,11 @@ import { SummaryCards } from './SummaryCards';
 import { ChannelTable } from './ChannelTable';
 import { GoalCalculator } from './GoalCalculator';
 import { CompetitorAnalysis } from './CompetitorAnalysis';
+import { AddHotelForm } from './AddHotelForm';
 import { Loader2 } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
-  const { hotels, selectedHotelId, isLoading, error } = useGlobalState();
+  const { hotels, selectedHotelId, setSelectedHotelId, isLoading, error } = useGlobalState();
 
   if (isLoading) {
     return (
@@ -29,22 +30,42 @@ export const Dashboard: React.FC = () => {
 
   const selectedHotel = hotels.find(h => h.id === selectedHotelId);
 
+  // Seçili tesis yoksa veya data null ise Boş State Formunu Bas
   if (!selectedHotel) {
     return (
-      <div className="p-12 text-center text-text-secondary flex items-center justify-center h-full">
-        Lütfen görüntülemek için yukarıdan bir otel seçin.
+      <div className="max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-12 flex flex-col items-center animate-in fade-in duration-500">
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-bold text-text-primary">Sistemde Henüz Veri Bulunmuyor</h2>
+          <p className="text-sm text-text-secondary mt-2 max-w-lg mx-auto">
+            ORM Dashboard tamamen canlı verilere dayanır. Başlamak için yönettiğiniz bir otelin veya rakibinizin Google linkini aşağıdaki forma yapıştırarak verileri çekin.
+          </p>
+        </div>
+        <div className="w-full">
+           <AddHotelForm />
+        </div>
       </div>
     );
   }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full animate-in fade-in duration-500">
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold text-text-primary tracking-tight">{selectedHotel.name}</h2>
           <p className="text-sm text-text-secondary mt-1">
-            Genel Bakış ve İtibar Durumu
+            Genel Bakış ve İtibar Durumu - {selectedHotel.type === 'Owned' ? 'Kendi Tesisimiz' : 'Rakip Tesis'}
           </p>
+        </div>
+        <div className="flex-shrink-0">
+          <button 
+             onClick={() => {
+               // Demo amaçlı "Yeni Ekleme" tetikleyicisi
+               setSelectedHotelId(null);
+             }}
+             className="bg-white/5 border border-border-subtle hover:bg-white/10 text-text-primary text-sm font-medium py-2 px-4 rounded-lg transition-colors"
+          >
+            + Yeni Veri Kaynağı Ekle
+          </button>
         </div>
       </div>
       

@@ -17,6 +17,7 @@ interface GlobalContextProps extends GlobalState {
   setSelectedHotelId: (id: string | null) => void; 
   refreshData: () => Promise<void>;
   addHotelChannel: (hotelName: string, type: HotelType, platform: PlatformName, url: string) => Promise<void>;
+  clearError: () => void;
 }
 
 const GlobalContext = createContext<GlobalContextProps | undefined>(undefined);
@@ -99,6 +100,8 @@ export const GlobalStateProvider: React.FC<{ children: ReactNode }> = ({ childre
     }
   };
 
+  const clearError = () => setError(null);
+
   // Provider mount olduğunda ilk veriyi çek
   useEffect(() => {
     loadData();
@@ -118,7 +121,8 @@ export const GlobalStateProvider: React.FC<{ children: ReactNode }> = ({ childre
     error,
     setSelectedHotelId,
     refreshData: loadData,
-    addHotelChannel
+    addHotelChannel,
+    clearError
   };
 
   return (

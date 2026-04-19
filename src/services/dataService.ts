@@ -19,7 +19,8 @@ export const dataService = {
       const result = await response.json();
 
       if (!response.ok || !result.success) {
-        throw new Error(result.error || result.details || 'Backend servisinden veri çekilirken hata oluştu.');
+        const errorMessage = result.details ? `${result.error}\n(Sistem Detayı: ${result.details})` : result.error;
+        throw new Error(errorMessage || 'Backend servisinden veri çekilirken hata oluştu.');
       }
 
       return result.data as Channel;

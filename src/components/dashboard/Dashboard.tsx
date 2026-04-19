@@ -5,10 +5,11 @@ import { ChannelTable } from './ChannelTable';
 import { GoalCalculator } from './GoalCalculator';
 import { CompetitorAnalysis } from './CompetitorAnalysis';
 import { AddHotelForm } from './AddHotelForm';
+import { RecentReviews } from './RecentReviews';
 import { Loader2 } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
-  const { hotels, selectedHotelId, setSelectedHotelId, isLoading, error } = useGlobalState();
+  const { hotels, selectedHotelId, setSelectedHotelId, isLoading, error, clearError } = useGlobalState();
 
   if (isLoading) {
     return (
@@ -21,9 +22,15 @@ export const Dashboard: React.FC = () => {
 
   if (error) {
     return (
-      <div className="p-8 text-center text-negative bg-negative/10 rounded-xl m-8 border border-negative/20">
-        <p className="font-semibold">Veri yüklenirken bir hata oluştu</p>
-        <p className="text-sm mt-1 text-text-secondary">{error}</p>
+      <div className="max-w-3xl mx-auto p-8 mt-12 text-center text-negative bg-negative/5 rounded-2xl border border-negative/20 shadow-lg animate-in fade-in duration-300">
+        <h3 className="text-xl font-bold mb-2">İşlem Sırasında Bir Sorun Oldu</h3>
+        <p className="text-sm mt-1 text-text-secondary whitespace-pre-line">{error}</p>
+        <button 
+          onClick={() => clearError()}
+          className="mt-6 bg-bg-surface hover:bg-white/5 border border-border-subtle text-text-primary px-6 py-2 rounded-lg font-medium transition-colors"
+        >
+          Kapat ve Tekrar Dene
+        </button>
       </div>
     );
   }
@@ -73,6 +80,7 @@ export const Dashboard: React.FC = () => {
       <ChannelTable hotel={selectedHotel} />
       <GoalCalculator hotel={selectedHotel} />
       <CompetitorAnalysis ownedHotel={selectedHotel} />
+      <RecentReviews hotel={selectedHotel} />
     </div>
   );
 };

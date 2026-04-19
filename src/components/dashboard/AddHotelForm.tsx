@@ -6,6 +6,7 @@ import { Plus, Search, Loader2 } from 'lucide-react';
 export const AddHotelForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
   const { addHotelChannel } = useGlobalState();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [urlError, setUrlError] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -14,9 +15,24 @@ export const AddHotelForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }
     url: ''
   });
 
+  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setFormData({ ...formData, url: val });
+    
+    if (val && formData.platform === 'Google') {
+      if (!val.includes('google.com/maps') && !val.includes('maps.app.goo.gl')) {
+        setUrlError("Geçersiz link. Lütfen 'google.com/maps' veya 'maps.app.goo.gl' içeren bir Google linki girin.");
+      } else {
+        setUrlError(null);
+      }
+    } else {
+      setUrlError(null);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.url) return;
+    if (!formData.name || !formData.url || urlError) return;
     
     setIsSubmitting(true);
     try {
@@ -85,17 +101,24 @@ export const AddHotelForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }
               required
               type="url" 
               placeholder="https://www.google.com/maps/place/..."
-              className="w-full bg-bg-surface border border-border-subtle text-text-primary text-sm rounded-lg focus:ring-brand focus:border-brand px-4 py-2.5"
+              className={`w-full bg-bg-surface border text-sm rounded-lg px-4 py-2.5 transition-colors focus:outline-none focus:ring-1 ${
+                urlError 
+                  ? 'border-negative text-negative focus:border-negative focus:ring-negative' 
+                  : 'border-border-subtle text-text-primary focus:border-brand focus:ring-brand'
+              }`}
               value={formData.url}
-              onChange={e => setFormData({ ...formData, url: e.target.value })}
+              onChange={handleUrlChange}
             />
+            {urlError && (
+              <p className="mt-1.5 text-xs text-negative font-medium">{urlError}</p>
+            )}
           </div>
         </div>
 
         <div className="pt-2">
           <button 
             type="submit" 
-            disabled={isSubmitting}
+            disabled={isSubmitting || !!urlError}
             className="w-full flex items-center justify-center bg-brand hover:bg-brand/90 text-white font-medium rounded-lg px-5 py-3 transition-colors disabled:opacity-50"
           >
             {isSubmitting ? (

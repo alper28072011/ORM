@@ -42,10 +42,20 @@ export const getReviews = async (req: Request, res: Response): Promise<void> => 
   } catch (error) {
     const platform = req.query.platform || req.body.platform || 'Platform';
     console.error(`[Backend API] ${platform} verisi alınırken hata:`, error);
+    
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    let userFriendlyError = `${platform} sayfasından veri çekilemedi.`;
+
+    if (errorMessage.includes('INVALID_URL')) {
+      userFriendlyError = 'Geçersiz Google Maps linki girdiniz, lütfen işletme profilinin ana linkini kullanın.';
+      res.status(400).json({ success: false, error: userFriendlyError, details: errorMessage });
+      return;
+    }
+
     res.status(500).json({ 
       success: false,
-      error: `${platform} sayfasından veri çekilemedi.`,
-      details: error instanceof Error ? error.message : String(error)
+      error: userFriendlyError,
+      details: errorMessage
     });
   }
 };
